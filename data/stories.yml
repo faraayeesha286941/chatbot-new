@@ -1,0 +1,30 @@
+version: "3.1"
+
+stories:
+  - story: ask average downlink user
+    steps:
+      - intent: ask_average_downlink_user
+      - action: action_get_average_download_speed
+
+  - story: show cells with low PRB utilization
+    steps:
+      - intent: show_low_prb_utilization
+      - action: action_get_low_prb_utilization
+
+  - story: handle downlink user button
+    steps:
+      - intent: ask_downlink_user
+      - action: action_handle_downlink_user  # Chatbot asks for Cell ID
+      - intent: provide_cell_id
+      - slot_was_set:
+          - cell_id: "<provided_cell_id>"
+      - action: action_get_average_download_speed
+
+  - story: ask downlink user happy path
+    steps:
+      - intent: ask_downlink_user
+      - action: action_handle_downlink_user
+      - intent: provide_cell_id
+      - slot_was_set:
+          - cell_id: null  # We don't specify the actual value
+      - action: action_get_average_download_speed

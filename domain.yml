@@ -1,0 +1,62 @@
+version: "3.1"
+
+intents:
+  - goodbye
+  - bot_challenge
+  - ask_average_downlink_user
+  - show_low_prb_utilization
+  - ask_downlink_user
+  - provide_cell_id
+
+slots:
+  cell_id:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: cell_id
+
+  awaiting_cell_id:
+    type: bool
+    initial_value: false
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  specific_date:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: specific_date
+
+entities:
+  - cell_id
+  - specific_date
+
+responses:
+  utter_goodbye:
+    - text: "Goodbye!"
+
+  utter_iamabot:
+    - text: "I am a bot, powered by Rasa."
+
+  utter_ask_cell_id:
+    - text: "Please provide the Cell ID to proceed."
+
+  utter_ask_specific_date:
+    - text: "Please provide the specific date you are interested in."
+
+  utter_no_data:
+    - text: "No data is available for the given cell ID and date range."
+
+  utter_database_error:
+    - text: "An error occurred while accessing the database."
+
+  utter_low_prb_utilization:
+    - text: "Here are the cells with low PRB utilization for {specific_date}:\n{low_prb_cells}"
+
+actions:
+  - action_get_average_download_speed
+  - action_get_low_prb_utilization
+  - action_handle_downlink_user

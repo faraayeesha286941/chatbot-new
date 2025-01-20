@@ -1,0 +1,79 @@
+version: "3.1"
+
+nlu:
+- intent: greet
+  examples: |
+    - hey
+    - hello
+    - hi
+    - good morning
+    - good evening
+    - hello there
+    - hey there
+
+- intent: goodbye
+  examples: |
+    - bye
+    - goodbye
+    - see you later
+    - bye bye
+
+- intent: affirm
+  examples: |
+    - yes
+    - indeed
+    - of course
+
+- intent: deny
+  examples: |
+    - no
+    - not really
+    - I don't think so
+
+- intent: ask_average_downlink_user
+  examples: |
+    - What is the average downlink user for cell [3063A_CMM_73C](cell_id) in the past week?
+    - Tell me the average downlink user of cell [3063A-CMM-73C](cell_id)
+    - What was the average downlink user for cell [CP80091_3_1](cell_id)?
+    - Show me the downlink user for [3063A_CMM_73C](cell_id)
+    - Get the average downlink user of cell [CL-80091_1-2](cell_id)
+    - What's the downlink average like for [CT12345_XY-9](cell_id)?
+    - Can you check the downlink for cell [3063A-CMM-73C](cell_id)?
+    - I want to know the downlink user of [CT12345_XY-9](cell_id)
+    - Check the downlink user stats for [CP80091_3_1](cell_id)
+    - What about [3063A_CMM_73C](cell_id)?
+
+- intent: show_low_prb_utilization
+  examples: |
+    - Show me cells with low PRB utilization on [2024-11-28](date)
+    - Which cells had low PRB utilization on [2024-11-27](date)?
+    - I need to see the cells with PRB utilization below threshold on [2024-11-30](date)
+    - Give me a list of cells with low PRB utilization on [2024-11-29](date)
+    - Which cells had PRB utilization issues on [2024-12-01](date)?
+    - Find cells with low PRB utilization for the date [2024-12-01](date)
+    - Low PRB utilization on [2024-12-02](date)
+    - PRB utilization below 20% on [2024-12-02](date)
+    - Show cells with poor PRB utilization for the day [2024-11-30](date)
+    - Get me the list of underutilized PRBs on [2024-11-29](date)
+
+- intent: ask_downlink_user
+  examples: |
+    - Downlink User
+    - Show me downlink user stats
+    - Get downlink user information
+
+- intent: provide_cell_id
+  examples: |
+    - The cell ID is [3063A_CMM_73C](cell_id)
+    - [CP80091_3_1](cell_id)
+    - Cell ID: [CT12345_XY-9](cell_id)
+    - Here's the cell ID: [CL-80091_1-2](cell_id)
+
+
+- regex: cell_id
+  examples: |
+    - [A-Z0-9]+[-_][A-Z0-9]+(?:[-_][A-Z0-9]+)*
+
+- regex: date
+  examples: |
+    - \d{4}-\d{2}-\d{2}
