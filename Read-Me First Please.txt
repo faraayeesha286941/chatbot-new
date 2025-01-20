@@ -1,0 +1,43 @@
+# rasa-chatbot
+This repository contains the Rasa chatbot project, which includes the bot's actions, training data, and PostgreSQL integration for the tracker store.
+
+Tools to install : 
+-Visual Studio Code or any preferred code editor.
+-PostgreSQL for the database (version 12 or higher recommended).
+-Rasa framework for chatbot.
+-Python Version: 3.9
+(Rasa 3.x is compatible with Python 3.8 and 3.9; use Python 3.9 for this project.)
+
+1. Set Up Python Environment (do this after you install Python)
+   1.1 make sure Python 3.9 installed and ensure it is added to your PATH (if you dont know how to do this, chatgpt it hahaha, or refer to the link I gave)
+   1.2 create a virtual environment: python -m venv venv
+
+2. How to install Rasa and Dependencies
+   2.1 install Rasa: pip install rasa==3.6.0
+   2.2 install other dependencies: pip install -r requirements.txt
+
+3. Postgresql setup
+   3.1 all the setup already have in code
+   3.2 to see the data, login database using this (password :123456) it is under server PostgresSQL 14
+   3.3 if cannot access to database, I think you need to load the data in your own database.
+
+additional notes : 
+can refer to this link how to setup rasa framework and python in your laptop 
+https://rasa.com/docs/rasa/installation/installing-rasa-open-source
+
+5. How to run rasa chatbot in terminal :
+    5.1 go to your chatbot file path in terminal and activate the virtual environment by write "activate"
+    5.2 write command rasa train
+    5.3 after it finish train the chatbot, run command : rasa run actions
+    5.4 to interact with chatbot in terminal, run command : rasa shell
+
+6. How to run rasa chatbot on cesium :
+  6.1 you need to have split terminal, first terminal run command : rasa run actions --port 5055, second terminal run command : rasa run --cors "*" --enable-api --port 5005
+  6.2 then, run the cesium in apache tomcat
+
+I think thats all for now. Thank you!
+   
+
+
+   
+
