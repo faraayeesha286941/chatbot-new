@@ -53,7 +53,7 @@ class ActionGetAverageDownloadSpeed(Action):
                 return [SlotSet("awaiting_cell_id", False), SlotSet("cell_id", None)]
 
             # Rest of your existing database query code...
-            start_date, end_date = datetime(2024, 9, 21), datetime(2025, 2, 28)
+            start_date, end_date = datetime(2024, 10, 21), datetime(2024, 10, 27)
             query_data = """
                 SELECT 
                     COALESCE(AVG("Avg. DL User Thp Mbps avg"), 0),

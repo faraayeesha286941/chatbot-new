@@ -64,15 +64,16 @@ nlu:
 
 - intent: provide_cell_id
   examples: |
-    - The cell ID is [3063A_CMM_73C](cell_id)
-    - [CP80091_3_1](cell_id)
-    - Cell ID: [CT12345_XY-9](cell_id)
-    - Here's the cell ID: [CL-80091_1-2](cell_id)
-
+    - The cell ID is [2376A](cell_id)
+    - [Z4982B](cell_id)
+    - Cell ID: [3896X](cell_id)
+    - Here's the cell ID: [4782C](cell_id)
+    - [2376A](cell_id)
+    - [5829D](cell_id)
 
 - regex: cell_id
   examples: |
-    - [A-Z0-9]+[-_][A-Z0-9]+(?:[-_][A-Z0-9]+)*
+    - \b[A-Z0-9]{3,}\b
 
 - regex: date
   examples: |
