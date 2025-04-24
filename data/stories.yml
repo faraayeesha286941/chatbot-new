@@ -28,3 +28,21 @@ stories:
       - slot_was_set:
           - cell_id: null  # We don't specify the actual value
       - action: action_get_average_download_speed
+
+  - story: ask site signal stats
+    steps:
+      - intent: ask_site_signal_stats
+      - action: action_get_site_signal_stats
+
+  - story: Show PRB worst list
+    steps:
+      - intent: ask_prb_list
+      - action: action_get_worst_prb_utilization
+
+  - story: Ticket info flow
+    steps:
+      - intent: ask_ticket_info
+      - action: action_get_ticket_info    
+
+    
+    

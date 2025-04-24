@@ -9,10 +9,10 @@ if %errorLevel% neq 0 (
 )
 
 :: Change to drive D:
-D:
+C:
 
 :: Navigate to the directory
-cd D:\CelcomDigi\chatbot-rasa
+cd C:\Users\noora\Desktop\CD WEB GIS PLATFORM\chatbot-new
 
 :: Activate virtual environment
 call venv\Scripts\activate

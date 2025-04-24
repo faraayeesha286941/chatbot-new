@@ -4,6 +4,7 @@ from typing import Any, Text, Dict, List
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
+from geopy.distance import geodesic
 import re
 
 class ActionHandleDownlinkUser(Action):
@@ -13,6 +14,108 @@ class ActionHandleDownlinkUser(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         dispatcher.utter_message(text="Please provide a valid Cell ID to proceed.")
         return [SlotSet("awaiting_cell_id", True)]
+    
+
+class ActionGetTicketInfo(Action):
+    def name(self) -> Text:
+        return "action_get_ticket_info"
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        ticket_id = next((e["value"] for e in tracker.latest_message.get("entities", []) if e["entity"] == "ticket_id"), None)
+
+        if not ticket_id:
+            dispatcher.utter_message(text="Please provide a valid Ticket ID.")
+            return []
+
+        try:
+            connection = psycopg2.connect(
+                host="localhost",
+                database="chatbot_gis",
+                user="rasa_user",
+                password="123456"
+            )
+            cursor = connection.cursor()
+
+            # Query main ticket info
+            query_ticket = """
+                SELECT 
+                    "Ticket ID", "Customer Name", "Case Category L1", "Case Category L2", "Case Category L3",
+                    "Ticket Status", "Closed Reason", "Resolved Reason", "Resolution", 
+                    "[DAISY] Latitude", "[DAISY] Longitude"
+                FROM public.network_complaint
+                WHERE "Ticket ID" = %s
+            """
+            cursor.execute(query_ticket, (ticket_id,))
+            ticket = cursor.fetchone()
+
+            if not ticket:
+                dispatcher.utter_message(text=f"❌ Ticket ID '{ticket_id}' not found.")
+                return []
+
+            (
+                tid, customer, cat1, cat2, cat3, status,
+                closed_reason, resolved_reason, resolution,
+                lat, lon
+            ) = ticket
+
+            if lat is None or lon is None:
+                dispatcher.utter_message(text="This ticket does not have valid coordinates to find the nearest one.")
+                return []
+
+            # Find nearest ticket based on lat/lon
+            cursor.execute("""
+                SELECT "Ticket ID", "[DAISY] Latitude", "[DAISY] Longitude"
+                FROM public.network_complaint
+                WHERE 
+                    "Ticket ID" != %s AND
+                    "[DAISY] Latitude" BETWEEN -90 AND 90 AND
+                    "[DAISY] Longitude" BETWEEN -180 AND 180 AND
+                    "[DAISY] Latitude" IS NOT NULL AND
+                    "[DAISY] Longitude" IS NOT NULL
+            """, (ticket_id,))
+
+            nearby = cursor.fetchall()
+            min_distance = float("inf")
+            nearest_id = None
+
+            for tid2, lat2, lon2 in nearby:
+                dist = geodesic((lat, lon), (lat2, lon2)).km
+                if dist < min_distance:
+                    min_distance = dist
+                    nearest_id = tid2
+
+            # Prepare final message
+            complaint_type = f"{cat1} > {cat2} > {cat3}"
+            soln = " | ".join(filter(None, [closed_reason, resolved_reason, resolution]))
+
+            msg = (
+                f"🎫 Ticket ID       : {ticket_id}\n"
+                f"🙋 Customer        : {customer}\n"
+                f"📂 *Complaint Type : {complaint_type}\n"
+                f"📌 Status          : {status}\n"
+                f"✅ Solution        : {soln or 'Not provided'}\n"
+            )
+
+            dispatcher.utter_message(text=msg, metadata={"location": {"lat": lat, "lon": lon}})
+
+
+        except psycopg2.Error as e:
+            print(f"❌ Database Error: {e}")
+            dispatcher.utter_message(text="Something went wrong when accessing the ticket info.")
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+
+        return []
+
+
+
+
+
+
+
+
 
 class ActionGetAverageDownloadSpeed(Action):
     def name(self) -> Text:
@@ -25,6 +128,8 @@ class ActionGetAverageDownloadSpeed(Action):
             if entity['entity'] == 'cell_id':
                 cell_id = entity['value']
                 break
+        print("DEBUG >> latest_message:", tracker.latest_message)
+        print("DEBUG >> extracted cell_id:", cell_id)    
         
         if not cell_id:
             # If no cell_id in entities, check if it's in the raw text
@@ -111,6 +216,85 @@ class ActionGetAverageDownloadSpeed(Action):
             return cell_id_match.group()
 
         return None
+
+
+class ActionGetSiteSignalStats(Action):
+    def name(self) -> Text:
+        return "action_get_site_signal_stats"
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        site_id = None
+
+        # First, try extracting from entity
+        for entity in tracker.latest_message.get('entities', []):
+            if entity['entity'] == 'siteid':
+                site_id = entity['value']
+                break
+
+        # If not found, try regex from text
+        if not site_id:
+            message_text = tracker.latest_message.get('text', '')
+            match = re.search(r'\b[A-Z0-9_-]{4,}\b', message_text)
+            if match:
+                site_id = match.group()
+
+        if not site_id:
+            dispatcher.utter_message(text="Please provide a valid Site ID.")
+            return []
+
+        # Clean the input
+        site_id = site_id.strip().upper()
+        print("DEBUG >> cleaned site_id:", site_id)
+
+        try:
+            connection = psycopg2.connect(
+                host="localhost",
+                database="chatbot_gis",
+                user="rasa_user",
+                password="123456"
+            )
+            cursor = connection.cursor()
+
+            # Validate siteid
+            cursor.execute("SELECT EXISTS (SELECT 1 FROM public.ookla_kepong WHERE siteid ILIKE %s)", (site_id,))
+            site_exists = cursor.fetchone()[0]
+            print(f"DEBUG >> siteid {site_id} exists:", site_exists)
+
+            if not site_exists:
+                dispatcher.utter_message(text=f"Site ID '{site_id}' does not exist in the database.")
+                return []
+
+            # Query averages
+            cursor.execute("""
+                SELECT 
+                    COALESCE(AVG(val_signal_rsrq_db), 0),
+                    COALESCE(AVG(val_signal_rsrp_dbm), 0),
+                    COUNT(*)
+                FROM public.ookla_kepong
+                WHERE siteid = %s
+            """, (site_id,))
+            avg_rsrq, avg_rsrp, count = cursor.fetchone()
+
+            response = (
+                f"Signal statistics for Site ID {site_id}:\n"
+                f"• Average RSRQ: {avg_rsrq:.2f} dB\n"
+                f"• Average RSRP: {avg_rsrp:.2f} dBm\n"
+                f"(Based on {count} records)"
+            )
+            dispatcher.utter_message(text=response)
+
+        except psycopg2.Error as e:
+            dispatcher.utter_message(text="An error occurred while accessing the database.")
+            print(f"Database error: {e}")
+        finally:
+            if 'connection' in locals():
+                cursor.close()
+                connection.close()
+
+        return []
+
+
+
 
 class ActionGetLowPRBUtilization(Action):
     def name(self) -> Text:

@@ -7,6 +7,9 @@ intents:
   - show_low_prb_utilization
   - ask_downlink_user
   - provide_cell_id
+  - ask_site_signal_stats
+  - ask_prb_list     # 👈 ADD THIS LINE
+  - ask_ticket_info
 
 slots:
   cell_id:
@@ -30,9 +33,25 @@ slots:
       - type: from_entity
         entity: specific_date
 
+  siteid:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: siteid      
+
+  ticket_id:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: ticket_id     
+
 entities:
   - cell_id
+  - siteid
   - specific_date
+  - ticket_id
 
 responses:
   utter_goodbye:
@@ -60,3 +79,7 @@ actions:
   - action_get_average_download_speed
   - action_get_low_prb_utilization
   - action_handle_downlink_user
+  - action_get_site_signal_stats
+  - action_get_worst_prb_utilization   # 👈 Add this line
+  - action_get_ticket_info
+

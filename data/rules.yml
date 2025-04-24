@@ -15,3 +15,22 @@ rules:
     steps:
       - intent: provide_cell_id
       - action: action_get_average_download_speed
+
+  - rule: Get signal stats by site ID
+    steps:
+     - intent: ask_site_signal_stats
+     - action: action_get_site_signal_stats
+
+  - rule: Show worst PRB utilization list
+    steps:
+      - intent: ask_prb_list
+      - action: action_get_worst_prb_utilization
+
+  - rule: Provide ticket info
+    steps:
+      - intent: ask_ticket_info
+      - action: action_get_ticket_info
+   
+
+      
+   
