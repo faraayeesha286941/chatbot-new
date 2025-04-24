@@ -12,7 +12,7 @@ if %errorLevel% neq 0 (
 C:
 
 :: Navigate to the directory
-cd C:\Users\noora\Desktop\CD WEB GIS PLATFORM\chatbot-new
+cd C:\Users\noora\Desktop\GITHUB CD\chatbot-new
 
 :: Activate virtual environment
 call venv\Scripts\activate

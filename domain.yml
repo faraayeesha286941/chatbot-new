@@ -10,7 +10,7 @@ intents:
   - ask_site_signal_stats
   - ask_prb_list     # 👈 ADD THIS LINE
   - ask_ticket_info
-
+ 
 slots:
   cell_id:
     type: text

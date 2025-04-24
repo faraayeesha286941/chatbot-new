@@ -30,7 +30,3 @@ rules:
     steps:
       - intent: ask_ticket_info
       - action: action_get_ticket_info
-   
-
-      
-   

@@ -4,7 +4,7 @@ from typing import Any, Text, Dict, List
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
-from geopy.distance import geodesic
+# from geopy.distance import geodesic
 import re
 # TESTTTTTTTTTTTTTT
 class ActionHandleDownlinkUser(Action):
@@ -36,12 +36,11 @@ class ActionGetTicketInfo(Action):
             )
             cursor = connection.cursor()
 
-            # Query main ticket info
+            # Query ticket info without coordinates
             query_ticket = """
                 SELECT 
                     "Ticket ID", "Customer Name", "Case Category L1", "Case Category L2", "Case Category L3",
-                    "Ticket Status", "Closed Reason", "Resolved Reason", "Resolution", 
-                    "[DAISY] Latitude", "[DAISY] Longitude"
+                    "Ticket Status", "Closed Reason", "Resolved Reason", "Resolution","[DAISY] Latitude", "[DAISY] Longitude"
                 FROM public.network_complaint
                 WHERE "Ticket ID" = %s
             """
@@ -54,37 +53,9 @@ class ActionGetTicketInfo(Action):
 
             (
                 tid, customer, cat1, cat2, cat3, status,
-                closed_reason, resolved_reason, resolution,
-                lat, lon
+                closed_reason, resolved_reason, resolution, latitude, longitude
             ) = ticket
 
-            if lat is None or lon is None:
-                dispatcher.utter_message(text="This ticket does not have valid coordinates to find the nearest one.")
-                return []
-
-            # Find nearest ticket based on lat/lon
-            cursor.execute("""
-                SELECT "Ticket ID", "[DAISY] Latitude", "[DAISY] Longitude"
-                FROM public.network_complaint
-                WHERE 
-                    "Ticket ID" != %s AND
-                    "[DAISY] Latitude" BETWEEN -90 AND 90 AND
-                    "[DAISY] Longitude" BETWEEN -180 AND 180 AND
-                    "[DAISY] Latitude" IS NOT NULL AND
-                    "[DAISY] Longitude" IS NOT NULL
-            """, (ticket_id,))
-
-            nearby = cursor.fetchall()
-            min_distance = float("inf")
-            nearest_id = None
-
-            for tid2, lat2, lon2 in nearby:
-                dist = geodesic((lat, lon), (lat2, lon2)).km
-                if dist < min_distance:
-                    min_distance = dist
-                    nearest_id = tid2
-
-            # Prepare final message
             complaint_type = f"{cat1} > {cat2} > {cat3}"
             soln = " | ".join(filter(None, [closed_reason, resolved_reason, resolution]))
 
@@ -96,8 +67,11 @@ class ActionGetTicketInfo(Action):
                 f"✅ Solution        : {soln or 'Not provided'}\n"
             )
 
-            dispatcher.utter_message(text=msg, metadata={"location": {"lat": lat, "lon": lon}})
-
+            if latitude is not None and longitude is not None:
+               dispatcher.utter_message(text=msg,metadata={"location": {"lat": latitude, "lon": longitude}}
+               )
+            else:
+                dispatcher.utter_message(text=msg)
 
         except psycopg2.Error as e:
             print(f"❌ Database Error: {e}")
@@ -108,15 +82,7 @@ class ActionGetTicketInfo(Action):
                 connection.close()
 
         return []
-
-
-
-
-
-
-
-
-
+    
 class ActionGetAverageDownloadSpeed(Action):
     def name(self) -> Text:
         return "action_get_average_download_speed"
