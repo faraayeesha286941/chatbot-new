@@ -20,6 +20,11 @@ Tools to install :
    3.1 all the setup already have in code
    3.2 to see the data, login database using this (password :123456) it is under server PostgresSQL 14
    3.3 if cannot access to database, I think you need to load the data in your own database.
+(Steps on adding your database) -
+1. make sure to add user
+2. when adding a table under sceheme, do all the columns depending on the csv.
+3. if any %DIV, u just let it be empty cell.
+4. import the csv again
 
 additional notes : 
 can refer to this link how to setup rasa framework and python in your laptop 
