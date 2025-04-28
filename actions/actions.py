@@ -6,7 +6,7 @@ from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
 # from geopy.distance import geodesic
 import re
-# TESTTTTTTTTTTTTTT
+
 class ActionHandleDownlinkUser(Action):
     def name(self) -> str:
         return "action_handle_downlink_user"
@@ -68,8 +68,8 @@ class ActionGetTicketInfo(Action):
             )
 
             if latitude is not None and longitude is not None:
-               dispatcher.utter_message(text=msg,metadata={"location": {"lat": latitude, "lon": longitude}}
-               )
+               dispatcher.utter_message(text=msg,metadata={"ticket_location": {"ticket_id": ticket_id, "lat": float(latitude), "lon": float(longitude)}}
+                )
             else:
                 dispatcher.utter_message(text=msg)
 

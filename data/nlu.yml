@@ -110,6 +110,7 @@ nlu:
     - [1727H](cell_id)
     - [1268H](cell_id)
     - [1567K](cell_id)
+    - [3730B](cell_id)
 
 
 - intent: ask_site_signal_stats
@@ -204,7 +205,8 @@ nlu:
     - [1571C](siteid)
     - [1753H](siteid)
     - [1285H](siteid)
-    - [1196H](siteid)
+    
+    
 
 - intent: ask_prb_list
   examples: |
@@ -219,18 +221,12 @@ nlu:
   examples: |
     - [32b0-fb92](ticket_id)
     - [9825-9888](ticket_id)
-    - [20240910-01125-1004](ticket_id)
     - [598d-8c2f](ticket_id)
     - [e369-0b04](ticket_id)
-    - [20240913-01793-663](ticket_id)
-    - [e0ea-0963](ticket_id)
     - [62dd-77f4](ticket_id)
     - [29dd-579a](ticket_id)
-    - [165a-93b7](ticket_id)
     - [0381-3078](ticket_id)
-    - [20240929-01720-629](ticket_id)
     - [7480-80f3](ticket_id)
-    - [20241002-07609-486](ticket_id)
     - [4e7a-86fa](ticket_id)
     - [e868-90bb](ticket_id)
     - [67e4-b017](ticket_id)
@@ -238,8 +234,6 @@ nlu:
     - [9028-08f1](ticket_id)
     - [9ee7-0fb2](ticket_id)
     - [7062-3064](ticket_id)
-    - [20241022-00416-2211](ticket_id)
-    - [20241025-00951-2211](ticket_id)
     - [15ee-0f57](ticket_id)
     - [b859-93d1](ticket_id)
 
