@@ -30,3 +30,10 @@ rules:
     steps:
       - intent: ask_ticket_info
       - action: action_get_ticket_info
+
+  - rule: Check sector congestion rule
+    steps:
+     - intent: check_sector_congestion
+     - action: action_check_sector_congestion
+    
+ 

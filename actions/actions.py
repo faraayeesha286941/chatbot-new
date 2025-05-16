@@ -4,6 +4,7 @@ from typing import Any, Text, Dict, List
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
+from collections import defaultdict
 # from geopy.distance import geodesic
 import re
 
@@ -15,6 +16,158 @@ class ActionHandleDownlinkUser(Action):
         dispatcher.utter_message(text="Please provide a valid Cell ID to proceed.")
         return [SlotSet("awaiting_cell_id", True)]
     
+class ActionFindComplaintsNearby(Action):
+    def name(self) -> Text:
+        return "action_find_complaints_nearby"
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        site_id = None
+
+        # Extract entity
+        for entity in tracker.latest_message.get('entities', []):
+            if entity['entity'] == 'siteid':
+                site_id = entity['value']
+                break
+
+        if not site_id:
+            site_id = tracker.latest_message.get('text', '').strip()
+
+        if not site_id:
+            dispatcher.utter_message(text="Please provide a valid Site ID.")
+            return []
+
+        site_id = site_id.strip().upper()
+
+        try:
+            connection = psycopg2.connect(
+                host="localhost",
+                database="chatbot_gis",
+                user="rasa_user",
+                password="123456"
+            )
+            cursor = connection.cursor()
+
+            query = """
+                SELECT "Ticket ID", "Customer N", "Case Categ", dist
+                FROM public.distance_by_site
+                WHERE siteid ILIKE %s AND dist <= 500
+                ORDER BY dist ASC
+            """
+            cursor.execute(query, (f"%{site_id}%",)) 
+
+            complaints = cursor.fetchall()
+
+            if complaints:
+                msg = f"✅ Found {len(complaints)} complaints within 500m of Site {site_id}:\n\n"
+                for ticket_id, customer, case_categ, distance in complaints:
+                    msg += f"🎫 Ticket: {ticket_id}\n🙋 Customer: {customer}\n📂 Category: {case_categ}\n📏 Distance: {distance:.2f} km\n\n"
+                dispatcher.utter_message(text=msg)
+            else:
+                dispatcher.utter_message(text=f"No complaints found within 500m for Site {site_id}.")
+
+        except Exception as e:
+            print(f"❌ Database Error: {e}")
+            dispatcher.utter_message(text="An error occurred while fetching nearby complaints.")
+        finally:
+            if 'connection' in locals():
+                cursor.close()
+                connection.close()
+
+        return []
+
+
+class ActionCheckSectorCongestion(Action):
+    def name(self) -> Text:
+        return "action_check_sector_congestion"
+
+    def run(self, dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        sector_id = tracker.get_slot("cell_ids")
+        if not sector_id:
+            dispatcher.utter_message(text="Please provide a valid Sector ID.")
+            return []
+
+        sector_id = sector_id.strip().upper()
+
+        try:
+            connection = psycopg2.connect(
+                host="localhost",
+                database="chatbot_gis",
+                user="rasa_user",
+                password="123456"
+            )
+            cursor = connection.cursor()
+
+            query = """
+                SELECT DISTINCT cell_name, prb_utilization_avg
+                FROM public.load_balancing
+                WHERE cell_name ILIKE %s
+            """
+            cursor.execute(query, (f"{sector_id}-%",))
+            results = cursor.fetchall()
+
+            if not results:
+                dispatcher.utter_message(text=f"No PRB data found for sector {sector_id}.")
+                return []
+
+            from collections import defaultdict
+            layer_stats = defaultdict(list)
+
+            for cell_name, prb_util in results:
+                layer_stats[cell_name].append(prb_util)
+
+            total_layers = len(layer_stats)
+
+            # Determine sectors based on last digit of layer suffix (e.g., 21 -> sector 1)
+            sector_map = defaultdict(list)
+            for cell_name in layer_stats:
+                match = re.search(r"-(\d{2})$", cell_name)
+                if match:
+                    last_two_digits = int(match.group(1))
+                    sector_num = last_two_digits % 10  # sector 1 from 21, 71, etc.
+                    sector_map[sector_num].append(cell_name)
+
+            total_sectors = len(sector_map)
+
+            # Header summary
+            response = (
+                f"🔍 Sector Analysis for {sector_id}:\n"
+                f"📊 Total Sectors: {total_sectors}\n"
+                f"📋 Total Layers: {total_layers}\n\n"
+            )
+
+            # Show sector groupings
+            for sector_num, layers in sorted(sector_map.items()):
+                response += f"📡 Sector {sector_num}: {', '.join(sorted(layers))}\n"
+
+            # PRB per layer and congestion status
+            congested_layers = []
+            response += "\n📈 PRB Utilization per Layer:\n"
+            for cell_name, prb_list in layer_stats.items():
+                avg_util = sum(prb_list) / len(prb_list)
+                response += f"• Layer: {cell_name} → PRB Utilization: {avg_util:.0f}%\n"
+                if avg_util >= 70:
+                    congested_layers.append(cell_name)
+
+            if congested_layers:
+                response += "\n⚠️ Congested Layers:\n" + "\n".join(f"- {layer}" for layer in congested_layers)
+            else:
+                response += "\n✅ No congested layers detected."
+
+            dispatcher.utter_message(text=response)
+
+        except Exception as e:
+            print("❌ ERROR:", e)
+            dispatcher.utter_message(text="An error occurred while accessing the database.")
+        finally:
+            if 'connection' in locals():
+                cursor.close()
+                connection.close()
+
+        return []
+
 
 class ActionGetTicketInfo(Action):
     def name(self) -> Text:

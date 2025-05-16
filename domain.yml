@@ -10,7 +10,11 @@ intents:
   - ask_site_signal_stats
   - ask_prb_list     # 👈 ADD THIS LINE
   - ask_ticket_info
- 
+  - ask_nearby_complaints
+  - check_sector_congestion
+
+
+
 slots:
   cell_id:
     type: text
@@ -47,11 +51,20 @@ slots:
       - type: from_entity
         entity: ticket_id     
 
+  cell_ids:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: cell_ids      
+
 entities:
   - cell_id
   - siteid
   - specific_date
   - ticket_id
+  - cell_ids
+  
 
 responses:
   utter_goodbye:
@@ -80,6 +93,9 @@ actions:
   - action_get_low_prb_utilization
   - action_handle_downlink_user
   - action_get_site_signal_stats
-  - action_get_worst_prb_utilization   # 👈 Add this line
+  - action_get_worst_prb_utilization   
   - action_get_ticket_info
+  - action_find_complaints_nearby
+  - action_check_sector_congestion
+
 
